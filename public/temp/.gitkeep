@@ -1,0 +1,1 @@
+// gitkeep files are used to ensure that empty directories are tracked by Git. Since Git does not track empty directories, adding a .gitkeep file allows you to keep the directory structure intact in your repository.
