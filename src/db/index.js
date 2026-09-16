@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import { DB_NAME } from "../constants.js";
 
+// Database have asynchronous nature so we need to handle it properly. We can use async/await  or promises/try...catch to handle the asynchronous nature of database operations. 
 const connectToDatabase = async () => {
     try{
         const connection = await mongoose.connect(`${process.env.MONGO_URI}/${DB_NAME}`);
