@@ -15,4 +15,12 @@ app.use(express.static("public")); // Serve static files from the "public" direc
 
 app.use(cookieParser()); // Parse cookies attached to the client request object
 
+
+//Routes
+import userRouter from "./routes/user.routes.js";
+app.use("/api/v1/users", userRouter); //http://localhost:5000/api/v1/users 
+
+
+
+
 export { app }; 
