@@ -4,6 +4,7 @@ import {User} from '../models/user.model.js';
 import {uploadToCloudinary} from '../utils/cloudinary.js';
 import {ApiResponse} from '../utils/ApiResponse.js';
 import jwt from 'jsonwebtoken';
+import mongoose from 'mongoose';
 
 const generateAccessAndRefreshTokens = async (userId) => {
     try{
@@ -126,7 +127,7 @@ const loginUser = asyncHandler(async (req, res) => {
 
     const cookieOptions = {
         httpOnly: true,
-        // secure: true // only send cookie over HTTPS
+        secure: process.env.NODE_ENV === "production"  // TRUE if in production, false if in development 
 
     };
     return res
@@ -153,14 +154,14 @@ const logoutUser = asyncHandler(async (req, res) => {
 
     const user = User.findByIdAndUpdate(req.user._id, 
         {
-            $set: {refreshToken: undefined}
+            $unset: {refreshToken: 1} 
         },
         {new: true });
         
 
         const cookieOptions = {
             httpOnly: true,
-            secure: true
+            secure: process.env.NODE_ENV === "production"  
         };
 
         return res
@@ -206,7 +207,7 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
 });
 
 const changeCurrentPassword = asyncHandler(async (req, res) => {
-    const {currentPassword, newPassword , confirmNewPassword} = req.body;
+    const {currentPassword, newPassword , confirmNewPassword} = req.body || {};
 
     const user = await User.findById(req.user._id);
     const isPasswordCorrect = await user.isPasswordCorrect(currentPassword);
@@ -217,7 +218,7 @@ const changeCurrentPassword = asyncHandler(async (req, res) => {
         throw new ApiError(400, "New password and confirm new password do not match");
     }
     user.password = newPassword;
-    await user.save({validateBeforeSave: false}); // save the new password to the database without validating other fields
+    await user.save();
     return res
     .status(200)
     .json(new ApiResponse(200, null, "Password changed successfully"));
@@ -230,13 +231,13 @@ const getCurrentUser = asyncHandler(async (req, res) => {
 });
 
 const updateCurrentUser = asyncHandler(async (req, res) => {
-    const {fullName, username, email} = req.body;
+    const {fullName, username, email} = req.body || {};
    
     if(!fullName || !email){
         throw new ApiError(400, "Full name and email are required");
     }
     
-    const user = await UserfindbyIdAndUpdate(req.user._id,
+    const user = await User.findByIdAndUpdate(req.user._id,
         {
             $set: {
                 fullName,
@@ -245,7 +246,10 @@ const updateCurrentUser = asyncHandler(async (req, res) => {
             }
         }, {new: true}
     ).select("-password -refreshToken"); // remove password and refreshToken from response
-    await user.save({validateBeforeSave: false});
+    
+    if(!user){
+        throw new ApiError(404, "User not found");
+    }
     return res
     .status(200)
     .json(new ApiResponse(200, user, "Account details updated successfully"));
@@ -409,4 +413,15 @@ const getWatchHistory = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, user[0].watchHistory, "Watch history fetched successfully"));
 });
 
-export {registerUser , loginUser , refreshAccessToken , changeCurrentPassword , getCurrentUser, updateCurrentUser, logoutUser, updateCurrentUserAvatar, updateCurrentUserCoverImage , getUserProfile, watchHistory};
+export {registerUser ,
+    loginUser ,
+    refreshAccessToken , 
+    changeCurrentPassword , 
+    getCurrentUser, 
+    updateCurrentUser,
+    logoutUser, 
+    getWatchHistory,
+    updateCurrentUserAvatar,
+    updateCurrentUserCoverImage,
+    getUserProfile
+};

@@ -36,8 +36,6 @@ router.post('/refresh-token', refreshAccessToken);
 
 router.post('/change-password', verifyJWT, changeCurrentPassword); 
 
-router.post('/profile', verifyJWT, getUserProfile); 
-
 router.patch('/update-profile', verifyJWT, updateCurrentUser);
 
 router.patch('/update-avatar', verifyJWT, upload.single("avatar"), updateCurrentUserAvatar);
