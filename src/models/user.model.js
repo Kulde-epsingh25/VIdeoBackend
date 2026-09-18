@@ -47,7 +47,7 @@ const userSchema = new Schema({
 
 // Middleware 
 userSchema.pre("save", async function(){
-    if(!this.isModified("password"))  ; // If the password field is not modified, skip hashing and proceed to the next middleware
+    if(!this.isModified("password")) return ; // If the password field is not modified, skip hashing and proceed to the next middleware
     this.password = await bcrypt.hash(this.password, 10); // Hash the password before saving the user document with a salt round of 10
      // Call the next middleware or save the document
 });

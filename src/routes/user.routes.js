@@ -1,7 +1,8 @@
 import { Router  } from "express";
 import { registerUser } from "../controllers/user.controller.js";
 import {upload} from "../middlewares/multer.middleware.js";
-
+import { loginUser, logoutUser } from "../controllers/user.controller.js";
+import { verifyJWT } from "../middlewares/auth.middleware.js";
 const router = Router();
 
 router.post('/register',upload.fields([
@@ -13,11 +14,14 @@ router.post('/register',upload.fields([
         name: "coverImage",
         maxCount: 1
     }
-]) , registerUser); //http://localhost:5000/api/v1/users/register
+]) , registerUser); //http://localhost:8000/api/v1/users/register
 
+router.post('/login', loginUser); //http://localhost:8000/api/v1/users/login
+ 
+//secure route 
 
+router.post('/logout', verifyJWT, logoutUser); //http://localhost:8000/api/v1/users/logout
 
-
-
+router.post('/refresh-token', refreshAccessToken); //http://localhost:8000/api/v1/users/refresh-token
 
 export  default  router ;
