@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 
-const teetSchema = new mongoose.Schema({
+const tweetSchema = new mongoose.Schema({
     content: {
         type: String,   
         required: true
@@ -11,4 +11,4 @@ const teetSchema = new mongoose.Schema({
     }
 }, {timestamps: true});
 
-export const Tweet = mongoose.model('Tweet', teetSchema);
+export const Tweet = mongoose.model('Tweet', tweetSchema);
