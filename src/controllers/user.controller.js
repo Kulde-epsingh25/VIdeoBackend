@@ -71,6 +71,12 @@ const coverImage = coverImageLocalPath ? await uploadToCloudinary(coverImageLoca
 if(!avatar){
     throw new ApiError(500, "Failed to upload avatar");
 };
+if(avatar.format !== "jpg" && avatar.format !== "jpeg" && avatar.format !== "png"){
+    throw new ApiError(400, "Avatar must be in jpg, jpeg or png format");
+}
+if(coverImage && coverImage.format !== "jpg" && coverImage.format !== "jpeg" && coverImage.format !== "png"){
+    throw new ApiError(400, "Cover image must be in jpg, jpeg or png format");
+}
 
 const newUser = await User.create({
     fullName,
@@ -235,16 +241,16 @@ const getCurrentUser = asyncHandler(async (req, res) => {
 const updateCurrentUser = asyncHandler(async (req, res) => {
     const {fullName, username, email} = req.body || {};
    
-    if(!fullName || !email){
-        throw new ApiError(400, "Full name and email are required");
+    if(!fullName && !username && !email){
+        throw new ApiError(400, "Full name, username, or email is required");
     }
     
     const user = await User.findByIdAndUpdate(req.user._id,
         {
             $set: {
-                fullName,
-                username: username?.toLowerCase(),
-                email: email?.toLowerCase()
+                fullName: fullName?.trim() || req.user.fullName,
+                username: username?.toLowerCase() || req.user.username,
+                email: email?.toLowerCase() || req.user.email
             }
         }, {new: true}
     ).select("-password -refreshToken"); // remove password and refreshToken from response
