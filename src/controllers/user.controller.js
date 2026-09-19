@@ -5,6 +5,7 @@ import {uploadToCloudinary} from '../utils/cloudinary.js';
 import {ApiResponse} from '../utils/ApiResponse.js';
 import jwt from 'jsonwebtoken';
 import mongoose from 'mongoose';
+import {cleanLocalStorage} from '../utils/cleanLocalStorage.js';
 
 const generateAccessAndRefreshTokens = async (userId) => {
     try{
@@ -43,27 +44,28 @@ const registerUser = asyncHandler(async (req, res) => {
     throw new ApiError(400, "All fields are required");
  };
 
-const existingUser = await User.findOne({$or: [{email}, {username}]}); // check if user already exists in the database
- if(existingUser){
-    throw new ApiError(409, "User already exists");
- };
-console.log("req.files:", req.files); // Log the entire req.files object to see its structure
-const avatarLocalPath =   req.files?.avatar[0]?.path  // using multer middleware to get the path of the uploaded avatar file
+ const avatarLocalPath =   req.files?.avatar[0]?.path  // using multer middleware to get the path of the uploaded avatar file
 //  const coverImageLocalPath = req.files?.coverImage[0]?.path; 
 // we will get error here if coverImage is not uploaded, so we will check if coverImage is present before accessing its path
 
 let coverImageLocalPath ;
 if(req.files && Array.isArray(req.files.coverImage) && req.files.coverImage.length > 0){
     coverImageLocalPath = req.files.coverImage[0].path;
-};
+}; 
 
-// console.log("Avatar Local Path:", avatarLocalPath); 
 if(!avatarLocalPath){
     throw new ApiError(400, "Avatar is required");
 };
 
-const avatar = await uploadToCloudinary(avatarLocalPath);
-const coverImage = coverImageLocalPath ? await uploadToCloudinary(coverImageLocalPath) : null;
+const existingUser = await User.findOne({$or: [{email}, {username}]}); // check if user already exists in the database
+ if(existingUser){
+    await cleanLocalStorage([avatarLocalPath, coverImageLocalPath]); // clean the local storage
+    throw new ApiError(409, "User already exists");
+ };
+
+ 
+const avatar = await uploadToCloudinary(avatarLocalPath , `${username}/avatar`); // Upload avatar to Cloudinary in a folder named after the username as example username is "john", the avatar will be uploaded to "john/avatar.jpg" in Cloudinary
+const coverImage = coverImageLocalPath ? await uploadToCloudinary(coverImageLocalPath , `${username}/coverImage`) : null;
 
 // console.log("Avatar Cloudinary Response:", avatar);
 if(!avatar){

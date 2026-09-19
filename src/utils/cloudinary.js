@@ -1,5 +1,5 @@
 import {v2 as cloudinary} from "cloudinary"; 
-import fs from "fs";
+import fs from "fs"; //used to delete the local file after successful upload to Cloudinary
 
 cloudinary.config({ 
         cloud_name: process.env.CLOUDINARY_CLOUD_NAME, 
@@ -7,7 +7,7 @@ cloudinary.config({
         api_secret: process.env.CLOUDINARY_API_SECRET 
     });
 
-const uploadToCloudinary = async (localFilePath) => {
+const uploadToCloudinary = async (localFilePath , folder) => {
     try {
         if (!fs.existsSync(localFilePath)) {
             throw new Error(`File not found: ${localFilePath}`);
@@ -15,6 +15,7 @@ const uploadToCloudinary = async (localFilePath) => {
         // Upload the file to Cloudinary
         const response = await cloudinary.uploader.upload(localFilePath, {
             resource_type: "auto", // Automatically detect the file type (image, video, etc.)
+            folder: folder // Specify the folder where the file should be uploaded
         });
         fs.unlinkSync(localFilePath); // Delete the local file after successful upload
         // console.log("Cloudinary Upload Response:", response);

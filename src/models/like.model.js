@@ -1,4 +1,4 @@
-import monggose from 'mongoose';
+import mongoose , {Schema} from 'mongoose';
 
 const likeSchema = new mongoose.Schema({
     video: {
