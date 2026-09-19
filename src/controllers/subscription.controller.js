@@ -58,7 +58,7 @@ const getUserChannelSubscribers = asyncHandler(async (req, res) => {
         throw new ApiError(400, "Invalid channelId");
     }
     const subscribers = await Subscription.find({ channel: channelId });
-    if (!subscribers) {
+    if (subscribers.length === 0) {
         throw new ApiError(404, "No subscribers found for this channel");
     }
     return res.status(200).json(new ApiResponse(200, subscribers, "Subscribers fetched successfully"));
@@ -71,7 +71,7 @@ const getSubscribedChannels = asyncHandler(async (req, res) => {
         throw new ApiError(400, "Invalid subscriberId");
     }
     const subscribedChannels = await Subscription.find({ subscriber: subscriberId });
-    if (!subscribedChannels) {
+    if (subscribedChannels.length === 0) {
         throw new ApiError(404, "No subscribed channels found for this user");
     }
     return res.status(200).json(new ApiResponse(200, subscribedChannels, "Subscribed channels fetched successfully"));

@@ -3,16 +3,23 @@ import mongoose , {Schema} from "mongoose";
 const subscriptionSchema = new Schema({
             subscriber: {
                 type: Schema.Types.ObjectId,
-                ref: "User" // one who subscribes to the channel
+                ref: "User",
+                required: true
             },
             channel: {
                 type: Schema.Types.ObjectId,
-                ref: "User" // one to whom subscriber is subscribing
+                ref: "User",
+                required: true
             },
 
         } , {
             timestamps: true
         });
+
+subscriptionSchema.index(
+    { subscriber: 1, channel: 1 },
+    { unique: true }
+);
 
 // Subscriber: The user who is subscribing to the channel
 // Channel: The user whose channel is being subscribed to
