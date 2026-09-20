@@ -57,9 +57,14 @@ const getUserChannelSubscribers = asyncHandler(async (req, res) => {
     if (!isValidObjectId(channelId)) {
         throw new ApiError(400, "Invalid channelId");
     }
-    const subscribers = await Subscription.find({ channel: channelId });
+    const subscribers = await Subscription.find({
+        channel: channelId
+    }).populate("subscriber", "username fullName avatar");
+
     if (subscribers.length === 0) {
-        throw new ApiError(404, "No subscribers found for this channel");
+        return res.status(200).json(
+            new ApiResponse(200, [], "No subscribers found")
+        );
     }
     return res.status(200).json(new ApiResponse(200, subscribers, "Subscribers fetched successfully"));
 })
@@ -72,7 +77,9 @@ const getSubscribedChannels = asyncHandler(async (req, res) => {
     }
     const subscribedChannels = await Subscription.find({ subscriber: subscriberId });
     if (subscribedChannels.length === 0) {
-        throw new ApiError(404, "No subscribed channels found for this user");
+        return res.status(200).json(
+            new ApiResponse(200, [], "No subscribed channels found for this user")
+        );
     }
     return res.status(200).json(new ApiResponse(200, subscribedChannels, "Subscribed channels fetched successfully"));
 })

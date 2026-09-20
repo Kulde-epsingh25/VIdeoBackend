@@ -10,10 +10,10 @@ const createTweet = asyncHandler(async (req, res) => {
     // get content from req.body, owner from req.user._id
     // validate content
     // create tweet document in database
-    const { content } = req.body
+    const { content } = req.body || {};
     const owner = req.user._id
 
-    if (!content) {
+    if (!content?.trim()) {
         throw new ApiError(400, "Content is required")
     }
 
@@ -44,11 +44,9 @@ const getUserTweets = asyncHandler(async (req, res) => {
 
     const tweets = await Tweet.find({ owner: userId });
 
-    if (!tweets) {
-        throw new ApiError(404, "No tweets found for this user")
-    }
-
-    return res.status(200).json(new ApiResponse(200, tweets, "User tweets fetched successfully"))
+    return res.status(200).json(
+        new ApiResponse(200, tweets, "User tweets fetched successfully")
+    )
 });
 
 const updateTweet = asyncHandler(async (req, res) => {

@@ -15,7 +15,7 @@ const getAllVideos = asyncHandler(async (req, res) => {
 
 const publishAVideo = asyncHandler(async (req, res) => {
     const { title, description} = req.body || {};
-    if([title, description].some(field => field?.trim() === "")){
+    if(!title?.trim() || !description?.trim()){
         throw new ApiError(400, "Title and description are required");
     }
 
@@ -70,8 +70,8 @@ const publishAVideo = asyncHandler(async (req, res) => {
     };
 
     const video = await Video.create({
-        title,
-        description,
+        title: title.trim(),
+        description: description.trim(),
         videoFile: videoUploadResult.url,
         duration: videoUploadResult.duration,
         thumbnail: thumbnailUploadResult?.url || thumbnailUrl,
@@ -87,10 +87,15 @@ const publishAVideo = asyncHandler(async (req, res) => {
     return res.status(201).json(new ApiResponse(201, publishedVideo, "Video published successfully"));
 
 });
+    
 
 const getVideoById = asyncHandler(async (req, res) => {
     const { videoId } = req.params
     //TODO: get video by id
+
+    if (!isValidObjectId(videoId)) {
+        throw new ApiError(400, "Invalid video ID");
+    }
 
     const video = await Video.findById(videoId);
 
@@ -118,11 +123,17 @@ const updateVideo = asyncHandler(async (req, res) => {
 
     const updateData = {};
 
-    if (title?.trim()) {
+    if (title !== undefined) {
+        if (!title.trim()) {
+            throw new ApiError(400, "Title cannot be empty");
+        }
         updateData.title = title.trim();
     }
 
-    if (description?.trim()) {
+    if (description !== undefined) {
+        if (!description.trim()) {
+            throw new ApiError(400, "Description cannot be empty");
+        }
         updateData.description = description.trim();
     }
 
