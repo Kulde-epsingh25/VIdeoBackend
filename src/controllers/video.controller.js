@@ -126,26 +126,6 @@ const publishAVideo = asyncHandler(async (req, res) => {
     return res.status(201).json(new ApiResponse(201, publishedVideo, "Video published successfully"));
 
 });
-
-const updateVideoViewCount = asyncHandler(async (req, res) => {
-    const { videoId } = req.params;
-
-    if (!isValidObjectId(videoId)) {
-        throw new ApiError(400, "Invalid video ID");
-    }
-
-    const video = await Video.findById(videoId);
-
-    if (!video) {
-        throw new ApiError(404, "Video not found");
-    }
-
-    video.views = (video.views || 0) + 1;
-
-    const updatedVideo = await video.save();
-
-    return res.status(200).json(new ApiResponse(200, updatedVideo, "Video view count updated successfully"));
-});
     
 
 const getVideoById = asyncHandler(async (req, res) => {
