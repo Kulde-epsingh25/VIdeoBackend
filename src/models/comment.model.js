@@ -29,17 +29,15 @@ const commentSchema = new Schema(
     { timestamps: true }
 );
 
-commentSchema.pre("validate", function (next) {
+commentSchema.pre("validate", function () {
     const hasVideo = Boolean(this.video);
     const hasTweet = Boolean(this.tweet);
 
     if (hasVideo === hasTweet) {
-        return next(
-            new Error("A comment must belong to either a video or a tweet")
+        throw new Error(
+            "A comment must belong to either a video or a tweet, not both"
         );
     }
-
-    next();
 });
 
 commentSchema.plugin(mongooseAggregatePaginate);
