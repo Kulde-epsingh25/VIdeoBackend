@@ -3,6 +3,9 @@ import {Like} from "../models/like.model.js"
 import {ApiError} from "../utils/ApiError.js"
 import {ApiResponse} from "../utils/ApiResponse.js"
 import {asyncHandler} from "../utils/asyncHandler.js"
+import { Tweet } from "../models/tweet.model.js";
+import { Video } from "../models/video.model.js";
+import { Comment } from "../models/comment.model.js";
 
 const toggleVideoLike = asyncHandler(async (req, res) => {
     const {videoId} = req.params
@@ -47,17 +50,27 @@ const toggleCommentLike = asyncHandler(async (req, res) => {
         throw new ApiError(400, "Invalid comment ID")
     }
 
-     const comment = await Like.findOneAndUpdate(
-        { comment: commentId, likedBy: req.user._id },
-         { $set: { likedBy: req.user._id } },
-          { new: true   }); 
-    
+    const existingLike = await Like.findOne({
+        comment: commentId,
+        likedBy: req.user._id
+    });
 
-    if(!comment) {
-        throw new ApiError(404, "Comment not found or you are not authorized to like/unlike this comment");
+    if (existingLike) {
+        await Like.deleteOne({ _id: existingLike._id });
+
+        return res.status(200).json(
+            new ApiResponse(200, { liked: false }, "Comment unliked successfully")
+        );
     }
 
-    return res.status(200).json(new ApiResponse(true, comment, "Comment like status toggled successfully"));
+    const like = await Like.create({
+        comment: commentId,
+        likedBy: req.user._id
+    });
+
+    return res.status(200).json(
+        new ApiResponse(200, { liked: true, like }, "Comment liked successfully")
+    );
 
 })
 
@@ -70,92 +83,162 @@ const toggleTweetLike = asyncHandler(async (req, res) => {
         throw new ApiError(400, "Invalid tweet ID")
     }
 
-    const tweet = await Like.findOneAndUpdate(
-        { tweet: tweetId, likedBy: req.user._id },
-         { $set: { likedBy: req.user._id } },
-          { new: true   }); 
-    
+    const tweet = await Tweet.findById(tweetId);
 
-    if(!tweet) {
-        throw new ApiError(404, "Tweet not found or you are not authorized to like/unlike this tweet");
+    if (!tweet) {
+        throw new ApiError(404, "Tweet not found");
     }
 
-    return res.status(200).json(new ApiResponse(true, tweet, "Tweet like status toggled successfully"));
+    const existingLike = await Like.findOne({
+        tweet: tweetId,
+        likedBy: req.user._id
+    });
+
+    if (existingLike) {
+        await Like.deleteOne({ _id: existingLike._id });
+
+        return res.status(200).json(
+            new ApiResponse(200, { liked: false }, "Tweet unliked successfully")
+        );
+    }
+
+    const like = await Like.create({
+        tweet: tweetId,
+        likedBy: req.user._id
+    });
+
+    return res.status(200).json(
+        new ApiResponse(200, { liked: true, like }, "Tweet liked successfully")
+    );
+
 });
 
 const getLikedVideos = asyncHandler(async (req, res) => {
-    //TODO: get all liked videos
-    // use aggregation to get all liked videos by the user
-    // first condition is to match the user id and video id should not be null
-    // join video to like collection using $lookup
-    // unwind the video array to get the video details 
     const likedVideos = await Like.aggregate([
         {
             $match: {
                 likedBy: req.user._id,
-                video: { $ne: null } // $ne: null ensures that we only get likes that are associated with videos
+                video: { $ne: null }
             }
         },
         {
             $lookup: {
-                from: 'videos', // collect all videos from the 'videos' collection
-                localField: 'video', // the field in the Like collection
-                foreignField: '_id', // the field in the Video collection
-                as: 'videoDetails' // the name of the new array field to add to the output documents
+                from: "videos",
+                localField: "video",
+                foreignField: "_id",
+                as: "videoDetails"
             }
         },
         {
-            $unwind: '$videoDetails' // deconstruct the array field from the input documents to output a document for each element
+            $unwind: "$videoDetails"
         }
     ]);
 
-    console.log(likedVideos);
-    
-    if (likedVideos.length === 0) {
-        return res.status(200).json(new ApiResponse(false, null, "No liked videos found"));
-    }
-
-    return res.status(200).json(new ApiResponse(true, likedVideos, "Liked videos fetched successfully"));
+    return res.status(200).json(
+        new ApiResponse(
+            200,
+            likedVideos,
+            likedVideos.length
+                ? "Liked videos fetched successfully"
+                : "No liked videos found"
+        )
+    );
 
 });
 
-
 const getLikedTweets = asyncHandler(async (req, res) => {
-    //TODO: get all liked tweets    
-    
     const likedTweets = await Like.aggregate([
         {
             $match: {
                 likedBy: req.user._id,
-                tweet: { $ne: null } // $ne: null ensures that we only get likes that are associated with videos
+                tweet: { $ne: null }
             }
         },
         {
             $lookup: {
-                from: 'tweets',
-                localField: 'tweet', 
-                foreignField: '_id', 
-                as: 'tweetDetails'
+                from: "tweets",
+                localField: "tweet",
+                foreignField: "_id",
+                as: "tweetDetails"
             }
-         }  //,
-            // {
-            //     $unwind: '$tweetDetails' 
-            //}
+        },
+        {
+            $unwind: "$tweetDetails"
+        }
     ]);
-   
-    console.log(likedTweets);
 
-    if (likedTweets.length === 0) {
-        return res.status(200).json(new ApiResponse(false, null, "No liked tweets found"));
-    }
+    return res.status(200).json(
+        new ApiResponse(
+            200,
+            likedTweets,
+            likedTweets.length
+                ? "Liked tweets fetched successfully"
+                : "No liked tweets found"
+        )
+    );
+});
 
-    return res.status(200).json(new ApiResponse(true, likedTweets, "Liked tweets fetched successfully"));
+const getLikedComments = asyncHandler(async (req, res) => {
+    const likedComments = await Like.aggregate([
+        {
+            $match: {
+                likedBy: req.user._id,
+                comment: { $ne: null }
+            }
+        },
+        {
+            $lookup: {
+                from: "comments",
+                localField: "comment",
+                foreignField: "_id",
+                as: "commentDetails",
+                pipeline: [
+                    {
+                        $lookup: {
+                            from: "users",
+                            localField: "owner",
+                            foreignField: "_id",
+                            as: "ownerDetails",
+                            pipeline: [
+                                {
+                                    $project: {
+                                        username: 1,
+                                        fullName: 1,
+                                        avatar: 1
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    {
+                        $unwind: {
+                            path: "$ownerDetails",
+                            preserveNullAndEmptyArrays: true
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            $unwind: "$commentDetails"
+        }
+    ]);
 
+    return res.status(200).json(
+        new ApiResponse(
+            200,
+            likedComments,
+            likedComments.length
+                ? "Liked comments fetched successfully"
+                : "No liked comments found"
+        )
+    );
 });
 export {
     toggleCommentLike,
     toggleTweetLike,
     toggleVideoLike,
     getLikedVideos,
-    getLikedTweets
+    getLikedTweets,
+    getLikedComments
 }

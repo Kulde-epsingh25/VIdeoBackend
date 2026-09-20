@@ -5,12 +5,51 @@ import {ApiError} from "../utils/ApiError.js"
 import {ApiResponse} from "../utils/ApiResponse.js"
 import {asyncHandler} from "../utils/asyncHandler.js"
 import {cloudinary,uploadToCloudinary} from "../utils/cloudinary.js"
-
+import { Comment } from "../models/comment.model.js";
 
 const getAllVideos = asyncHandler(async (req, res) => {
     const { page = 1, limit = 10, query, sortBy, sortType, userId } = req.query
     //TODO: get all videos based on query, sort, pagination
-    
+    const pageNumber = Number.parseInt(page, 10);
+    const limitNumber = Number.parseInt(limit, 10);
+    const skip = (pageNumber - 1) * limitNumber;
+
+    const sortOptions = {};
+    if (sortBy) {
+        const sortField = sortBy;
+        const sortOrder = sortType === "desc" ? -1 : 1;
+        sortOptions[sortField] = sortOrder;
+    }
+
+    const filterOptions = {};
+    if (query) {
+        filterOptions.$or = [ // or operator to search in title and description
+            { title: { $regex: query, $options: "i" } }, //regex is used to search for a string in a field, i is for case insensitive search 
+            { description: { $regex: query, $options: "i" } }
+        ];
+    }
+    if(userId) {
+        filterOptions.owner = userId;
+    }
+
+    const [videos, totalVideos] = await Promise.all([
+        Video.find(filterOptions)
+            .sort(sortOptions)
+            .skip(skip)
+            .limit(limitNumber)
+            .populate("owner", "username email profilePicture")
+            .exec(), // exec() is used to execute the query and return a promise
+        Video.countDocuments(filterOptions)
+    ]);
+
+    return res.status(200).json(
+        new ApiResponse(
+            200,
+            { videos, totalVideos },
+            "Videos fetched successfully"
+        )
+    );
+
 })
 
 const publishAVideo = asyncHandler(async (req, res) => {
