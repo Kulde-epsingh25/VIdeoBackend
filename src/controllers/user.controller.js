@@ -383,11 +383,14 @@ const getWatchHistory = asyncHandler(async (req, res) => {
             }
         },
         {
+            $unwind: "$watchHistory"
+        },
+        {
             $lookup: {
-                from: "Video",
-                localField: "watchHistory", // collecting the watch history of the user from the Video collection
+                from: "videos",
+                localField: "watchHistory.video", // collecting the watch history of the user from the Video collection
                 foreignField: "_id",
-                as: "watchHistory" ,
+                as: "videoDetails" ,
                 pipeline: [ 
                     {
                         $lookup: {
@@ -413,12 +416,27 @@ const getWatchHistory = asyncHandler(async (req, res) => {
                     }
                 ]
             }
+        },
+        {
+            $unwind: "$videoDetails"
+        },
+        {
+            $project: {
+                _id: 0,
+                video: "$videoDetails",
+                watchedAt: "$watchHistory.watchedAt"
+            }
+        },
+        {
+            $sort: {
+                watchedAt: -1
+            }
         }
     ]);
 
     return res
     .status(200)
-    .json(new ApiResponse(200, user[0].watchHistory, "Watch history fetched successfully"));
+    .json(new ApiResponse(200, user, "Watch history fetched successfully"));
 });
 
 export {registerUser ,

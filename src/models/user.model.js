@@ -30,10 +30,17 @@ const userSchema = new Schema({
     coverImage: {
         type: String
     },
-    watchHistory: {
-        type: Schema.Types.ObjectId,
-        ref: "Video"
-    },
+    watchHistory:  [{
+        video: {
+            type: Schema.Types.ObjectId,
+            ref: "Video",
+            required: true
+        },
+        watchedAt: {
+            type: Date,
+            default: Date.now
+        }
+    }],
     password: {
         type: String,
         required: [true, "Password is required"]
