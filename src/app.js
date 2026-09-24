@@ -28,6 +28,8 @@ import playlistRouter from "./routes/playlist.routes.js"
 import dashboardRouter from "./routes/dashboard.routes.js"
 import viewRouter from "./routes/view.routes.js"
 
+import { errorHandler } from "./middlewares/error.middleware.js";
+
 //routes declaration
 app.use("/api/v1/healthcheck", healthcheckRouter)
 app.use("/api/v1/users", userRouter)
@@ -40,7 +42,7 @@ app.use("/api/v1/playlist", playlistRouter)
 app.use("/api/v1/dashboard", dashboardRouter)
 app.use("/api/v1/view", viewRouter)
 
-
-
+// Global centralized error handling middleware (must be registered after all routes)
+app.use(errorHandler);
 
 export { app };
